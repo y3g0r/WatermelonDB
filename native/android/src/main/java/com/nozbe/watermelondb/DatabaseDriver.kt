@@ -7,7 +7,7 @@ import com.facebook.react.bridge.WritableArray
 import java.lang.Exception
 import java.util.logging.Logger
 
-class DatabaseDriver(context: Context, dbName: String) {
+class DatabaseDriver(context: Context, dbName: String, password: String) {
     sealed class Operation {
         class Execute(val table: TableName, val query: SQL, val args: QueryArgs) : Operation()
         class Create(val table: TableName, val id: RecordID, val query: SQL, val args: QueryArgs) : Operation()
@@ -20,8 +20,8 @@ class DatabaseDriver(context: Context, dbName: String) {
     class SchemaNeededError : Exception()
     data class MigrationNeededError(val databaseVersion: SchemaVersion) : Exception()
 
-    constructor(context: Context, dbName: String, schemaVersion: SchemaVersion)
-            : this(context, dbName) {
+    constructor(context: Context, dbName: String, schemaVersion: SchemaVersion, password: String)
+            : this(context, dbName, password) {
         val compatibility = isCompatible(schemaVersion)
         when (compatibility) {
             is SchemaCompatibility.NeedsSetup -> throw SchemaNeededError()
@@ -30,16 +30,16 @@ class DatabaseDriver(context: Context, dbName: String) {
         }
     }
 
-    constructor(context: Context, dbName: String, schema: Schema) : this(context, dbName) {
+    constructor(context: Context, dbName: String, schema: Schema, password: String) : this(context, dbName, password) {
         unsafeResetDatabase(schema)
     }
 
-    constructor(context: Context, dbName: String, migrations: MigrationSet) :
-            this(context, dbName) {
+    constructor(context: Context, dbName: String, migrations: MigrationSet, password: String) :
+            this(context, dbName, password) {
         migrate(migrations)
     }
 
-    private val database: Database = Database(dbName, context)
+    private val database: Database = Database(dbName, context, password)
 
     private val log: Logger? = if (BuildConfig.DEBUG) Logger.getLogger("DB_Driver") else null
 

@@ -31,6 +31,7 @@ class DatabaseBridge(private val reactContext: ReactApplicationContext) :
     fun initialize(
         tag: ConnectionTag,
         databaseName: String,
+        password: String,
         schemaVersion: Int,
         promise: Promise
     ) {
@@ -42,7 +43,8 @@ class DatabaseBridge(private val reactContext: ReactApplicationContext) :
                     driver = DatabaseDriver(
                             context = reactContext,
                             dbName = databaseName,
-                            schemaVersion = schemaVersion
+                            schemaVersion = schemaVersion,
+                            password = password
                     )
             )
             promiseMap.putString("code", "ok")
@@ -65,6 +67,7 @@ class DatabaseBridge(private val reactContext: ReactApplicationContext) :
     fun setUpWithSchema(
         tag: ConnectionTag,
         databaseName: String,
+        password: String,
         schema: SQL,
         schemaVersion: SchemaVersion,
         promise: Promise
@@ -76,7 +79,8 @@ class DatabaseBridge(private val reactContext: ReactApplicationContext) :
                     schema = Schema(
                             version = schemaVersion,
                             sql = schema
-                    )
+                    ),
+                    password = password
             ),
             promise = promise
     )
@@ -85,6 +89,7 @@ class DatabaseBridge(private val reactContext: ReactApplicationContext) :
     fun setUpWithMigrations(
         tag: ConnectionTag,
         databaseName: String,
+        password: String,
         migrations: SQL,
         fromVersion: SchemaVersion,
         toVersion: SchemaVersion,
@@ -100,7 +105,8 @@ class DatabaseBridge(private val reactContext: ReactApplicationContext) :
                                     from = fromVersion,
                                     to = toVersion,
                                     sql = migrations
-                            )
+                            ),
+                            password = password
                     ),
                     promise = promise
             )

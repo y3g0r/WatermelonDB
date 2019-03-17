@@ -21,6 +21,7 @@ declare module '@nozbe/watermelondb/adapters/sqlite' {
 
   export interface SQLiteAdapterOptions {
     dbName: string
+    password: string
     schema: AppSchema
   }
 

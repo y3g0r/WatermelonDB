@@ -49,9 +49,9 @@ type InitializeStatus =
   | { code: 'migrations_needed', databaseVersion: SchemaVersion }
 
 type NativeBridgeType = {
-  initialize: (ConnectionTag, string, SchemaVersion) => Promise<InitializeStatus>,
-  setUpWithSchema: (ConnectionTag, string, SQL, SchemaVersion) => Promise<void>,
-  setUpWithMigrations: (ConnectionTag, string, SQL, SchemaVersion, SchemaVersion) => Promise<void>,
+  initialize: (ConnectionTag, string, string, SchemaVersion) => Promise<InitializeStatus>,
+  setUpWithSchema: (ConnectionTag, string, string, SQL, SchemaVersion) => Promise<void>,
+  setUpWithMigrations: (ConnectionTag, string, string, SQL, SchemaVersion, SchemaVersion) => Promise<void>,
   find: (ConnectionTag, TableName<any>, RecordId) => Promise<DirtyFindResult>,
   query: (ConnectionTag, TableName<any>, SQL) => Promise<DirtyQueryResult>,
   count: (ConnectionTag, SQL) => Promise<number>,
@@ -80,10 +80,11 @@ export default class SQLiteAdapter implements DatabaseAdapter {
 
   _dbName: string
 
-  constructor({ dbName, schema, migrationsExperimental }: SQLiteAdapterOptions): void {
+  constructor({ dbName, schema, migrationsExperimental, password }: SQLiteAdapterOptions): void {
     this.schema = schema
     this.migrations = migrationsExperimental
     this._dbName = this._getName(dbName)
+    this._password = password
     isDevelopment && validateAdapter(this)
 
     devLogSetUp(() => this._init())
@@ -111,7 +112,7 @@ export default class SQLiteAdapter implements DatabaseAdapter {
     // we're good. If not, we try again, this time sending the compiled schema or a migration set
     // This is to speed up the launch (less to do and pass through bridge), and avoid repeating
     // migration logic inside native code
-    const status = await Native.initialize(this._tag, this._dbName, this.schema.version)
+    const status = await Native.initialize(this._tag, this._dbName, this._password, this.schema.version)
 
     if (status.code === 'schema_needed') {
       await this._setUpWithSchema()
@@ -135,6 +136,7 @@ export default class SQLiteAdapter implements DatabaseAdapter {
         await Native.setUpWithMigrations(
           this._tag,
           this._dbName,
+          this._password,
           this._encodeMigrations(migrationSteps),
           databaseVersion,
           this.schema.version,
@@ -157,6 +159,7 @@ export default class SQLiteAdapter implements DatabaseAdapter {
     await Native.setUpWithSchema(
       this._tag,
       this._dbName,
+      this._password,
       this._encodedSchema(),
       this.schema.version,
     )
